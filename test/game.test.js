@@ -58,6 +58,8 @@ test('invalid actions are rejected', () => {
   const bad = [
     { type: 'plant', plant: 'carrot', x: 99, y: 0, player: 'Ana' },
     { type: 'plant', plant: 'cactus', x: 0, y: 0, player: 'Ana' },
+    { type: 'plant', plant: 'constructor', x: 0, y: 0, player: 'Ana' },
+    { type: 'plant', plant: '__proto__', x: 0, y: 0, player: 'Ana' },
     { type: 'plant', plant: 'carrot', x: 0, y: 0, player: '' },
     { type: 'dance', x: 0, y: 0, player: 'Ana' },
     null,

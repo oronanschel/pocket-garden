@@ -33,7 +33,11 @@ joinForm.addEventListener('submit', (event) => {
 function connect() {
   const events = new EventSource(`/events?name=${encodeURIComponent(playerName)}`);
   events.onmessage = (event) => render(JSON.parse(event.data));
-  events.onerror = () => setStatus('Lost connection to the garden, retrying…', true);
+  events.onerror = () => {
+    setStatus('Lost connection to the garden, retrying…', true);
+    // EventSource gives up for good on some errors (e.g. a non-200 reply), so retry ourselves.
+    if (events.readyState === EventSource.CLOSED) setTimeout(connect, 2000);
+  };
   events.onopen = () => setStatus('Pick a tool, then click a garden plot.');
 }
 

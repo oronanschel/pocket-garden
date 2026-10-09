@@ -52,8 +52,8 @@ function applyAction(garden, action) {
 
   switch (action.type) {
     case 'plant': {
+      if (!Object.hasOwn(PLANTS, action.plant)) return { ok: false, error: 'Unknown plant' };
       const plant = PLANTS[action.plant];
-      if (!plant) return { ok: false, error: 'Unknown plant' };
       if (tile) return { ok: false, error: 'Something is already growing there' };
       garden.tiles[index] = { type: action.plant, growth: 0, water: 0, plantedBy: player };
       addLog(garden, player, `planted a ${plant.name.toLowerCase()}`);
