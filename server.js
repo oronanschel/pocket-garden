@@ -5,9 +5,10 @@ const http = require('http');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { createGarden, applyAction, tick, publicState } = require('./game');
+const { createGarden, loadGarden, applyAction, tick, publicState } = require('./game');
 
 const TICK_MS = 1000;
+const SAVE_DELAY_MS = 1000;
 
 const STATIC_FILES = {
   '/': ['index.html', 'text/html; charset=utf-8'],
@@ -21,18 +22,50 @@ function sendJson(res, status, body) {
   res.end(JSON.stringify(body));
 }
 
+function readSavedGarden(saveFile) {
+  let text;
+  try {
+    text = fs.readFileSync(saveFile, 'utf8');
+  } catch {
+    return null; // no save yet
+  }
+  try {
+    const garden = loadGarden(JSON.parse(text));
+    if (garden) return garden;
+  } catch {}
+  console.warn(`Ignoring unreadable garden save at ${saveFile}; starting a fresh garden.`);
+  return null;
+}
+
+function writeSavedGarden(saveFile, garden) {
+  fs.mkdirSync(path.dirname(saveFile), { recursive: true });
+  const tmp = `${saveFile}.tmp`;
+  fs.writeFileSync(tmp, JSON.stringify(garden));
+  fs.renameSync(tmp, saveFile);
+}
+
 // Creates a server with its own garden. Call listen() on the result.
-function createGardenServer() {
-  const garden = createGarden();
+// With saveFile, the garden is loaded from and saved to that JSON file.
+function createGardenServer({ saveFile } = {}) {
+  const garden = (saveFile && readSavedGarden(saveFile)) || createGarden();
   const clients = new Set(); // { res, name }
+  let saveTimer = null;
+
+  function saveNow() {
+    clearTimeout(saveTimer);
+    saveTimer = null;
+    if (saveFile) writeSavedGarden(saveFile, garden);
+  }
 
   function onlinePlayers() {
     return [...new Set([...clients].map((c) => c.name))].sort();
   }
 
-  function broadcast() {
+  // Sends the garden to everyone; changed=true also schedules a save.
+  function broadcast(changed = false) {
     const data = `data: ${JSON.stringify(publicState(garden, onlinePlayers()))}\n\n`;
     for (const client of clients) client.res.write(data);
+    if (changed && saveFile && !saveTimer) saveTimer = setTimeout(saveNow, SAVE_DELAY_MS);
   }
 
   function handleEvents(req, res, url) {
@@ -65,7 +98,7 @@ function createGardenServer() {
         return sendJson(res, 400, { ok: false, error: 'Invalid JSON' });
       }
       const result = applyAction(garden, action);
-      if (result.ok) broadcast();
+      if (result.ok) broadcast(true);
       sendJson(res, result.ok ? 200 : 400, result);
     });
   }
@@ -90,16 +123,28 @@ function createGardenServer() {
   });
 
   const timer = setInterval(() => {
-    if (tick(garden)) broadcast();
+    if (tick(garden)) broadcast(true);
   }, TICK_MS);
-  server.on('close', () => clearInterval(timer));
+  server.on('close', () => {
+    clearInterval(timer);
+    if (saveTimer) saveNow();
+  });
+  server.saveNow = saveNow;
 
   return server;
 }
 
 if (require.main === module) {
   const port = Number(process.env.PORT) || 3000;
-  createGardenServer().listen(port, () => {
+  const saveFile = process.env.GARDEN_FILE || path.join(__dirname, 'data', 'garden.json');
+  const server = createGardenServer({ saveFile });
+  for (const signal of ['SIGINT', 'SIGTERM']) {
+    process.on(signal, () => {
+      server.saveNow();
+      process.exit(0);
+    });
+  }
+  server.listen(port, () => {
     console.log(`Pocket Garden is running at http://localhost:${port}`);
     for (const addrs of Object.values(os.networkInterfaces())) {
       for (const addr of addrs || []) {

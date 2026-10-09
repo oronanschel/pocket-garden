@@ -23,6 +23,38 @@ function createGarden(size = GRID_SIZE) {
   };
 }
 
+const isCount = (n) => Number.isInteger(n) && n >= 0;
+
+function isValidTile(tile) {
+  return (
+    tile === null ||
+    (typeof tile === 'object' &&
+      Object.hasOwn(PLANTS, tile.type) &&
+      isCount(tile.growth) &&
+      isCount(tile.water) &&
+      tile.water <= MAX_WATER &&
+      typeof tile.plantedBy === 'string')
+  );
+}
+
+// Rebuilds a garden from saved JSON data, or returns null if it doesn't look like one.
+function loadGarden(data) {
+  if (!data || typeof data !== 'object') return null;
+  const { size, tiles, goal, scores, log } = data;
+  if (!Number.isInteger(size) || size < 1 || !Array.isArray(tiles) || tiles.length !== size * size) return null;
+  if (!tiles.every(isValidTile)) return null;
+  if (!goal || !isCount(goal.target) || !isCount(goal.progress) || !isCount(goal.completed)) return null;
+  if (!scores || typeof scores !== 'object' || !Object.values(scores).every(isCount)) return null;
+  if (!Array.isArray(log)) return null;
+  return {
+    size,
+    tiles: tiles.map((tile) => tile && { type: tile.type, growth: tile.growth, water: tile.water, plantedBy: tile.plantedBy }),
+    goal: { target: goal.target, progress: goal.progress, completed: goal.completed },
+    scores: { ...scores },
+    log: log.slice(0, LOG_LENGTH),
+  };
+}
+
 function stageOf(tile) {
   const plant = PLANTS[tile.type];
   if (tile.growth >= plant.growTime) return 3;
@@ -115,4 +147,4 @@ function publicState(garden, players) {
   };
 }
 
-module.exports = { PLANTS, MAX_WATER, WATER_PER_CAN, createGarden, applyAction, tick, stageOf, publicState };
+module.exports = { PLANTS, MAX_WATER, WATER_PER_CAN, createGarden, loadGarden, applyAction, tick, stageOf, publicState };
