@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pocket Garden</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>🌱 Pocket Garden</h1>
+    <p class="tagline">Plant, water and harvest together.</p>
+  </header>
+
+  <form id="join" class="panel">
+    <label for="name">Your gardener name</label>
+    <input id="name" maxlength="20" required autocomplete="off" placeholder="e.g. Robin">
+    <button type="submit">Join the garden</button>
+  </form>
+
+  <main id="game" hidden>
+    <section class="play">
+      <div id="tools" class="tools" role="toolbar" aria-label="Tools"></div>
+      <p id="status" class="status" aria-live="polite">Pick a tool, then click a garden plot.</p>
+      <div id="grid" class="grid"></div>
+    </section>
+
+    <aside class="side">
+      <div class="panel">
+        <h2>Shared goal</h2>
+        <p id="goal-text"></p>
+        <div class="bar"><div id="goal-bar" class="bar-fill"></div></div>
+        <p id="goal-done" class="muted"></p>
+      </div>
+      <div class="panel">
+        <h2>Gardeners online</h2>
+        <ul id="players"></ul>
+      </div>
+      <div class="panel">
+        <h2>Harvest points</h2>
+        <ul id="scores"></ul>
+      </div>
+      <div class="panel">
+        <h2>Recent activity</h2>
+        <ul id="log" class="log"></ul>
+      </div>
+    </aside>
+  </main>
+
+  <script src="client.js"></script>
+</body>
+</html>

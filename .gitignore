@@ -1,0 +1,4 @@
+node_modules/
+diagnostics/
+.claude/
+.DS_Store
