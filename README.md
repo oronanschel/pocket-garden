@@ -35,7 +35,7 @@ One watering lasts 5 seconds of growth, so bigger plants need several waterings.
 
 **Shared goal:** harvest 20 points together. Each completed goal raises the next target by 10. The sidebar shows who is online, everyone's harvest points and recent activity.
 
-The garden lives in the server's memory, so restarting the server starts a fresh garden.
+The garden is saved to `data/garden.json` and picked up again when the server restarts. Plants don't grow while the server is stopped. To start over, stop the server and delete that file. Set `GARDEN_FILE=/some/other/path.json` to keep the garden somewhere else.
 
 ## Develop
 
@@ -43,7 +43,7 @@ The garden lives in the server's memory, so restarting the server starts a fresh
 npm test
 ```
 
-- `game.js`: garden rules (planting, watering, growth, harvesting, shared goal)
+- `game.js`: garden rules (planting, watering, growth, harvesting, shared goal) and loading a saved garden
 - `server.js`: zero-dependency HTTP server that serves the client, accepts actions at `POST /action` and pushes the garden state to every browser over Server-Sent Events at `GET /events`
 - `public/`: the browser client (HTML, CSS, JavaScript; no build step)
 - `test/`: tests for the game rules (`node --test`)
