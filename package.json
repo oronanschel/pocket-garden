@@ -1,0 +1,13 @@
+{
+  "name": "pocket-garden",
+  "version": "0.1.0",
+  "description": "A small cooperative garden game that runs in the browser",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
