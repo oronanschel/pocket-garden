@@ -100,6 +100,9 @@ main {
 .plot.wet { background: var(--soil-wet); }
 .plot.ready { box-shadow: inset 0 0 0 3px var(--ready); }
 .plot:hover { filter: brightness(1.1); }
+.plot.selected { outline: 3px solid var(--accent); outline-offset: 1px; }
+
+.plot-info { min-height: 1.4em; margin: 10px 0 0; }
 
 .plot .water {
   position: absolute;

@@ -11,6 +11,8 @@ let playerName = '';
 let selectedTool = null; // { type: 'plant', plant } | { type: 'water' } | { type: 'harvest' }
 let plots = [];
 let toolsBuilt = false;
+let selectedPlot = null; // index of the last clicked plot, whose details are shown under the grid
+let lastState = null;
 
 try {
   nameInput.value = localStorage.getItem('pocket-garden-name') || '';
@@ -71,7 +73,11 @@ function buildGrid(size) {
       const plot = document.createElement('button');
       plot.type = 'button';
       plot.className = 'plot';
-      plot.addEventListener('click', () => act(x, y));
+      plot.addEventListener('click', () => {
+        selectedPlot = y * size + x;
+        render(lastState);
+        act(x, y);
+      });
       const label = document.createElement('span');
       const water = document.createElement('div');
       water.className = 'water';
@@ -108,6 +114,19 @@ function fillList(id, items) {
   );
 }
 
+function describePlot(state, i) {
+  const x = i % state.size;
+  const y = Math.floor(i / state.size);
+  const where = `Plot ${x + 1},${y + 1}`;
+  const tile = state.tiles[i];
+  if (!tile) return `${where}: empty`;
+  const plant = state.plants[tile.type];
+  const stageNames = ['seed', 'sprout', 'growing', 'ready to harvest'];
+  const thirsty = tile.stage < 3 && tile.water === 0 ? ', needs water' : '';
+  const progress = tile.stage < 3 ? `, ${tile.growth}/${plant.growTime} grown, water ${tile.water}/${state.maxWater}` : '';
+  return `${where}: ${plant.name}, ${stageNames[tile.stage]}${thirsty}${progress} (planted by ${tile.plantedBy})`;
+}
+
 function render(state) {
   if (!toolsBuilt) {
     buildTools(state.plants);
@@ -115,23 +134,25 @@ function render(state) {
     toolsBuilt = true;
   }
 
-  const stageNames = ['seed', 'sprout', 'growing', 'ready to harvest'];
+  lastState = state;
   state.tiles.forEach((tile, i) => {
     const { plot, label, water } = plots[i];
+    const details = describePlot(state, i);
+    plot.title = details;
+    plot.setAttribute('aria-label', details);
     if (!tile) {
       label.textContent = '';
       water.style.width = '0';
       plot.className = 'plot';
-      plot.title = 'Empty plot';
-      return;
+    } else {
+      label.textContent = state.plants[tile.type].stages[tile.stage];
+      water.style.width = `${(tile.water / state.maxWater) * 100}%`;
+      plot.className = 'plot' + (tile.water > 0 ? ' wet' : '') + (tile.stage === 3 ? ' ready' : '');
     }
-    const plant = state.plants[tile.type];
-    label.textContent = plant.stages[tile.stage];
-    water.style.width = `${(tile.water / state.maxWater) * 100}%`;
-    plot.className = 'plot' + (tile.water > 0 ? ' wet' : '') + (tile.stage === 3 ? ' ready' : '');
-    const thirsty = tile.stage < 3 && tile.water === 0 ? ', needs water' : '';
-    plot.title = `${plant.name}: ${stageNames[tile.stage]}${thirsty} (planted by ${tile.plantedBy})`;
+    plot.classList.toggle('selected', i === selectedPlot);
   });
+  document.getElementById('plot-info').textContent =
+    selectedPlot === null ? 'Tap or hover a plot to see what is growing there.' : describePlot(state, selectedPlot);
 
   const { goal } = state;
   document.getElementById('goal-text').textContent =
