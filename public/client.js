@@ -84,13 +84,17 @@ function buildGrid(size) {
 
 async function act(x, y) {
   if (!selectedTool) return;
-  const response = await fetch('/action', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ...selectedTool, x, y, player: playerName }),
-  });
-  const result = await response.json();
-  setStatus(result.ok ? 'Pick a tool, then click a garden plot.' : result.error, !result.ok);
+  try {
+    const response = await fetch('/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...selectedTool, x, y, player: playerName }),
+    });
+    const result = await response.json();
+    setStatus(result.ok ? 'Pick a tool, then click a garden plot.' : result.error, !result.ok);
+  } catch {
+    setStatus('Could not reach the garden server.', true);
+  }
 }
 
 function fillList(id, items) {
